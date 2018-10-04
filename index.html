@@ -104,11 +104,34 @@
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix)
       }
 
-      function scaleMatrix(matrix, scale) {
+    function rotateMatrix(matrix, center_matrix, degree) {
+        radian = degree*(Math.PI/180);
+        coor = [1, 1, 1];
+        for (var i=0; i<matrix.length/3; ++i) {
+            coor[0] = matrix[3*i] - center_matrix[0];
+            coor[1] = matrix[3*i+1] - center_matrix[1];
+            coor[2] = matrix[3*i+2] - center_matrix[2];
+            matrix[3*i] = Math.cos(radian)*coor[0] - Math.sin(radian)*coor[2] + center_matrix[0];
+            matrix[3*i+2] = Math.sin(radian)*coor[0] + Math.cos(radian)*coor[2] + center_matrix[2];
+        }
+    }
+
+    function translateMatrix(matrix, trans_matrix, scale = 1) {
+        for (var i=0; i<matrix.length/3; ++i) {
+            matrix[3*i] += trans_matrix[0]*scale;
+            matrix[3*i+1] += trans_matrix[1]*scale;
+            matrix[3*i+2] += trans_matrix[2]*scale;
+        }
+        return matrix;
+    }
+
+    function scaleMatrix(matrix, scale) {
       	for (var i=0; i<matrix.length; ++i)
-	  matrix[i]*=scale;
-	return matrix;
-      }
+            matrix[i]*=scale;
+        return matrix;
+    }
+
+    //function 
 
       var triangleVertexPositionBuffer
       var triangleVertexColorBuffer
