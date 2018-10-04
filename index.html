@@ -105,8 +105,8 @@
       }
 
     function rotateMatrix(matrix, center_matrix, degree) {
-        radian = degree*(Math.PI/180);
-        coor = [1, 1, 1];
+        var radian = degree*(Math.PI/180);
+        var coor = [1, 1, 1];
         for (var i=0; i<matrix.length/3; ++i) {
             coor[0] = matrix[3*i] - center_matrix[0];
             coor[1] = matrix[3*i+1] - center_matrix[1];
@@ -114,9 +114,11 @@
             matrix[3*i] = Math.cos(radian)*coor[0] - Math.sin(radian)*coor[2] + center_matrix[0];
             matrix[3*i+2] = Math.sin(radian)*coor[0] + Math.cos(radian)*coor[2] + center_matrix[2];
         }
+
+        return matrix;
     }
 
-    function translateMatrix(matrix, trans_matrix, scale = 1) {
+    function translateMatrix(matrix, trans_matrix, scale) {
         for (var i=0; i<matrix.length/3; ++i) {
             matrix[3*i] += trans_matrix[0]*scale;
             matrix[3*i+1] += trans_matrix[1]*scale;
@@ -140,6 +142,7 @@
       var cubeVertexPositionBuffer
       var cubeVertexColorBuffer
 
+        var vertice = []
       function initBuffers() {
 	// Cube position
 	cubeVertexPositionBuffer = gl.createBuffer();
@@ -170,7 +173,7 @@
           -1.0, -1.0, 1.0,
           -1.0, -1.0, -1.0
 	];
-	cube = scaleMatrix(cube, 2.5);
+	cube = scaleMatrix(cube, 3);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cube), gl.STATIC_DRAW);
 	cubeVertexPositionBuffer.itemSize = 3;
 	cubeVertexPositionBuffer.numItems = cube.length/3;
@@ -188,7 +191,7 @@
         // Triangle Position
         triangleVertexPositionBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer)
-	var vertices = [
+	vertice = [
 	  -0.5, 1.0, 0.0,
 	  -1.0, 1.0, 0.0,
 	  -0.5, -1.0, 0.0,
@@ -205,7 +208,7 @@
 	  0.5, 1.0, 0.0
 	  
 	]
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertice), gl.STATIC_DRAW)
         triangleVertexPositionBuffer.itemSize = 3
         triangleVertexPositionBuffer.numItems = 12
         // Triangle Color
@@ -224,15 +227,43 @@
         triangleVertexColorBuffer.itemSize = 4
         triangleVertexColorBuffer.numItems = 12
       }
+
+      var center = [0.0, 0.0, 0.0]
+      var turn = [1,1,1]
+      function moveLetter()
+      {
+        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
+        vertice = translateMatrix(vertice, turn, 0.01);
+        for (var i = 0; i< center.length; ++i) {
+            center[i]+=(turn[i]*0.01);
+        }
+        vertice = rotateMatrix(vertice, center, turn[0]*4);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertice), gl.STATIC_DRAW);
+      }
+
+      var pointArr = [0,3,6]
+      function collideLetter() {
+        for(var i = 0;i<turn.length;i++) {
+          for(var k=0;k<pointArr.length;k++) {
+            if(vertice[pointArr[k]+i]>=3 || vertice[pointArr[k]+i]<=-3) {
+              turn[i]*=-1
+              break
+            }
+          }
+        }
+      }
+
       var rTri = 0
       var rSquare = 0
       function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-        mat4.perspective(pMatrix, glMatrix.toRadian(45), gl.viewportWidth / gl.viewportHeight, 0.1, 100.0)
+        mat4.perspective(pMatrix, glMatrix.toRadian(60), gl.viewportWidth / gl.viewportHeight, 0.1, 100.0)
         mat4.identity(mvMatrix)
 
         mat4.translate(mvMatrix, mvMatrix, [0, 0.0, -10.0])
+        moveLetter()
+        collideLetter()
         gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer)
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
         gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer)
@@ -274,6 +305,6 @@
     </script>
   </head>
   <body onload="webGLStart();">
-    <canvas id="mycanvas" style="border: none" width="500" height="500"></canvas>
+    <canvas id="mycanvas" style="border: none" width="700" height="700"></canvas>
   </body>
 </html>
